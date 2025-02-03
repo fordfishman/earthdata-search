@@ -2,6 +2,7 @@ import { test, expect } from 'playwright-test-coverage'
 
 import { login } from '../../support/login'
 import { getAuthHeaders } from '../../support/getAuthHeaders'
+import { setupTests } from '../../support/setupTests'
 
 import collectionsGraphJson from './__mocks__/collections_graph.json'
 import timeline from './__mocks__/timeline.json'
@@ -11,15 +12,18 @@ import accessMethods from './__mocks__/access_methods.json'
 import collectionFixture from './__mocks__/authenticated_collections.json'
 
 test.describe('Timeline spec', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
-    await page.route('**/*.{png,jpg,jpeg}', (route) => route.abort())
+  test.beforeEach(async ({ page, context }, testInfo) => {
+    await setupTests({
+      page,
+      context
+    })
 
     // eslint-disable-next-line no-param-reassign
     testInfo.snapshotPath = (name) => `${testInfo.file}-snapshots/${name}`
   })
 
   test('should resize the leaflet controls', async ({ page, context }) => {
-    login(context)
+    await login(context)
 
     const authHeaders = getAuthHeaders()
 
@@ -62,6 +66,12 @@ test.describe('Timeline spec', () => {
       })
     })
 
+    await page.route(/saved_access_configs/, async (route) => {
+      await route.fulfill({
+        json: {}
+      })
+    })
+
     await page.route(/granules$/, async (route) => {
       await route.fulfill({
         json: granules.body,
@@ -91,6 +101,9 @@ test.describe('Timeline spec', () => {
 
     // Click a collection that exists in the project
     await page.getByTestId('collection-result-item_C1443528505-LAADS').click()
+
+    // Wait for the timeline to be visible
+    await expect(page.getByTestId('timeline')).toBeInViewport()
 
     // Confirm the leaflet tools are in the correct location
     await expect(page).toHaveScreenshot('granules-screenshot.png', {

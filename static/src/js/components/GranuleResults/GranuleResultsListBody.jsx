@@ -57,30 +57,40 @@ innerElementType.propTypes = {
  * Renders GranuleResultsListBody.
  * @param {Object} props - The props passed into the component.
  * @param {String} props.collectionId - The collection ID.
+ * @param {Object} props.collectionQuerySpatial - The spatial for the collection query
+ * @param {Object} props.collectionTags - The tags for the focused collection
  * @param {Object} props.directDistributionInformation - The direct distribution information.
  * @param {Array} props.excludedGranuleIds - List of excluded granule IDs.
+ * @param {Object} props.generateNotebook - The generateNotebook state from the redux store.
  * @param {Array} props.granules - List of formatted granule.
  * @param {Number} props.height - The height of the container provided by AutoSizer.
  * @param {Boolean} props.isCollectionInProject - Flag designating if the collection is in the project.
  * @param {Boolean} props.isOpenSearch - Flag designating CWIC collections.
- * @param {Function} props.isGranuleInProject - Function to detirmine if the granule is in the project.
- * @param {Function} props.isItemLoaded - Callback to detirmine if a granule has been loaded.
- * @param {Number} props.itemCount - Number of total granule list itmes.
+ * @param {Function} props.isGranuleInProject - Function to determine if the granule is in the project.
+ * @param {Function} props.isItemLoaded - Callback to determine if a granule has been loaded.
+ * @param {Number} props.itemCount - Number of total granule list items.
  * @param {Function} props.loadMoreItems - Callback to load more granules.
  * @param {Object} props.location - Location passed from react router.
  * @param { Function } props.onAddGranuleToProjectCollection - Callback to add a granule to the project.
  * @param {Function} props.onExcludeGranule - Callback to exclude a granule.
  * @param {Function} props.onFocusedGranuleChange - Callback to change the focused granule.
+ * @param {Function} props.onGenerateNotebook - Callback to generate a notebook.
+ * @param {Function} props.onMetricsAddGranuleProject - Metrics callback for adding granule to project event.
  * @param {Function} props.onMetricsDataAccess - Callback to record data access metrics.
  * @param { Function } props.onRemoveGranuleFromProjectCollection - Callback to remove a granule to the project.
+ * @param { Array } props.readableGranuleName - The readableGranuleName filter value.
  * @param {Function} props.setVisibleMiddleIndex - Callback to set the visible middle index.
  * @param {Number} props.visibleMiddleIndex - The current visible middle index.
  * @param {Number} props.width - The width of the container provided by AutoSizer.
  */
 export const GranuleResultsListBody = ({
   collectionId,
+  collectionQuerySpatial,
+  collectionTags,
   directDistributionInformation,
   excludedGranuleIds,
+  focusedGranuleId,
+  generateNotebook,
   granules,
   height,
   isCollectionInProject,
@@ -93,8 +103,11 @@ export const GranuleResultsListBody = ({
   onAddGranuleToProjectCollection,
   onExcludeGranule,
   onFocusedGranuleChange,
+  onGenerateNotebook,
+  onMetricsAddGranuleProject,
   onMetricsDataAccess,
   onRemoveGranuleFromProjectCollection,
+  readableGranuleName,
   setVisibleMiddleIndex,
   visibleMiddleIndex,
   width
@@ -137,9 +150,37 @@ export const GranuleResultsListBody = ({
       listRef.current.scrollToItem({
         rowIndex,
         columnIndex
-      }, 'center')
+      }, 'auto')
     }
   }, [listRef.current])
+
+  const scrollToFocusedGranule = (granuleId) => {
+    const granuleIndex = granules.findIndex((granule) => {
+      const { id } = granule
+      if (granuleId === id) return true
+
+      return false
+    })
+
+    if (granuleIndex >= 0) {
+      const {
+        rowIndex,
+        columnIndex
+      } = itemToRowColumnIndicies(granuleIndex, numColumns)
+
+      listRef.current.scrollToItem({
+        rowIndex: rowIndex === 0 ? 0 : rowIndex + 1,
+        columnIndex,
+        align: 'center'
+      })
+    }
+  }
+
+  useEffect(() => {
+    if (focusedGranuleId) {
+      scrollToFocusedGranule(focusedGranuleId)
+    }
+  }, [focusedGranuleId])
 
   // `setRowHeight` sets the size in the sizeMap to the height passed from the item.
   const setRowHeight = useCallback((rowIndex, columnIndex, size) => {
@@ -165,10 +206,6 @@ export const GranuleResultsListBody = ({
 
     const rowHeight = Math.max(...sizeMap.current[rowIndex])
 
-    if (rowIndex === itemCount - 1) {
-      return rowHeight + (remInPixels * 4)
-    }
-
     return rowHeight + remInPixels
   }, [itemCount])
 
@@ -189,6 +226,7 @@ export const GranuleResultsListBody = ({
                 listRef.current = list
               }
             }
+            overscanRowCount={3}
             columnCount={numColumns}
             columnWidth={() => (width / numColumns) - (remInPixels / numColumns)}
             height={height}
@@ -199,8 +237,11 @@ export const GranuleResultsListBody = ({
             itemData={
               {
                 collectionId,
+                collectionQuerySpatial,
+                collectionTags,
                 directDistributionInformation,
                 excludedGranuleIds,
+                generateNotebook,
                 getRowHeight,
                 granules,
                 isCollectionInProject,
@@ -212,8 +253,11 @@ export const GranuleResultsListBody = ({
                 onAddGranuleToProjectCollection,
                 onExcludeGranule,
                 onFocusedGranuleChange,
+                onGenerateNotebook,
+                onMetricsAddGranuleProject,
                 onMetricsDataAccess,
                 onRemoveGranuleFromProjectCollection,
+                readableGranuleName,
                 setRowHeight,
                 windowHeight: height,
                 windowWidth: width
@@ -221,7 +265,7 @@ export const GranuleResultsListBody = ({
             }
             onItemsRendered={
               (gridProps) => {
-              // OnItemsRendered needs to know which items are visible in the list
+                // OnItemsRendered needs to know which items are visible in the list
                 const overscanStartIndex = gridProps.overscanRowStartIndex * numColumns
                 const overscanStopIndex = gridProps.overscanRowStopIndex * numColumns
                 const visibleStartIndex = gridProps.visibleRowStartIndex * numColumns
@@ -255,8 +299,12 @@ GranuleResultsListBody.defaultProps = {
 
 GranuleResultsListBody.propTypes = {
   collectionId: PropTypes.string.isRequired,
+  collectionQuerySpatial: PropTypes.shape({}).isRequired,
+  collectionTags: PropTypes.shape({}).isRequired,
   directDistributionInformation: PropTypes.shape({}).isRequired,
   excludedGranuleIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  focusedGranuleId: PropTypes.string.isRequired,
+  generateNotebook: PropTypes.shape({}).isRequired,
   granules: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   height: PropTypes.number.isRequired,
   isCollectionInProject: PropTypes.bool.isRequired,
@@ -269,8 +317,11 @@ GranuleResultsListBody.propTypes = {
   onAddGranuleToProjectCollection: PropTypes.func.isRequired,
   onExcludeGranule: PropTypes.func.isRequired,
   onFocusedGranuleChange: PropTypes.func.isRequired,
+  onGenerateNotebook: PropTypes.func.isRequired,
+  onMetricsAddGranuleProject: PropTypes.func.isRequired,
   onMetricsDataAccess: PropTypes.func.isRequired,
   onRemoveGranuleFromProjectCollection: PropTypes.func.isRequired,
+  readableGranuleName: PropTypes.arrayOf(PropTypes.string).isRequired,
   setVisibleMiddleIndex: PropTypes.func,
   visibleMiddleIndex: PropTypes.number,
   width: PropTypes.number.isRequired

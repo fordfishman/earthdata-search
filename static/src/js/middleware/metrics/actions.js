@@ -1,4 +1,6 @@
 import {
+  METRICS_ADD_COLLECTION_PROJECT,
+  METRICS_ADD_GRANULE_PROJECT,
   METRICS_BROWSE_GRANULE_IMAGE,
   METRICS_CLICK,
   METRICS_DATA_ACCESS,
@@ -7,10 +9,21 @@ import {
   METRICS_RELATED_COLLECTION,
   METRICS_SPATIAL_EDIT,
   METRICS_SPATIAL_SELECTION,
+  METRICS_TEMPORAL_FILTER,
   METRICS_TIMELINE,
   METRICS_TIMING,
   METRICS_COLLECTION_SORT_CHANGE
 } from './constants'
+
+export const metricsAddCollectionProject = (payload) => ({
+  type: METRICS_ADD_COLLECTION_PROJECT,
+  payload
+})
+
+export const metricsAddGranuleProject = (payload) => ({
+  type: METRICS_ADD_GRANULE_PROJECT,
+  payload
+})
 
 export const metricsDataAccess = (payload) => ({
   type: METRICS_DATA_ACCESS,
@@ -48,6 +61,11 @@ export const metricsSpatialEdit = (payload) => ({
 
 export const metricsGranuleFilter = (payload) => ({
   type: METRICS_GRANULE_FILTER,
+  payload
+})
+
+export const metricsTemporalFilter = (payload) => ({
+  type: METRICS_TEMPORAL_FILTER,
   payload
 })
 

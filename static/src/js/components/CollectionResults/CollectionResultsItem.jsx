@@ -8,9 +8,10 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 
 import { AlertInformation } from '@edsc/earthdata-react-icons/horizon-design-system/earthdata/ui'
 import {
-  Plus,
+  CloudFill,
   Minus,
-  CloudFill
+  Plus,
+  Settings
 } from '@edsc/earthdata-react-icons/horizon-design-system/hds/ui'
 
 import {
@@ -26,7 +27,8 @@ import { pluralize } from '../../util/pluralize'
 import { retrieveThumbnail } from '../../util/retrieveThumbnail'
 
 import Button from '../Button/Button'
-import CustomizableIcons from '../CustomizableIcons/CustomizableIcons'
+import AvailableCustomizationsIcons from '../AvailableCustomizationsIcons/AvailableCustomizationsIcons'
+import AvailableCustomizationsTooltipIcons from '../AvailableCustomizationsIcons/AvailableCustomizationsTooltipIcons'
 import EDSCIcon from '../EDSCIcon/EDSCIcon'
 import MetaIcon from '../MetaIcon/MetaIcon'
 import Spinner from '../Spinner/Spinner'
@@ -39,6 +41,7 @@ import './CollectionResultsItem.scss'
  * @param {Object} props - The props passed into the component.
  * @param {Object} props.collection - The collection metadata.
  * @param {Function} props.onAddProjectCollection - Callback to add a collection to a project.
+ * @param {Function} props.onMetricsAddCollectionProject - Metrics callback for adding a collection to project event.
  * @param {Function} props.onRemoveCollectionFromProject - Callback to remove a collection to a project.
  * @param {Function} props.onViewCollectionGranules - Callback to show collection granules route.
  * @param {Function} props.onViewCollectionDetails - Callback to show collection details route.
@@ -46,6 +49,7 @@ import './CollectionResultsItem.scss'
 export const CollectionResultsItem = forwardRef(({
   collectionMetadata,
   onAddProjectCollection,
+  onMetricsAddCollectionProject,
   onRemoveCollectionFromProject,
   onViewCollectionDetails,
   onViewCollectionGranules
@@ -133,6 +137,12 @@ export const CollectionResultsItem = forwardRef(({
       onClick={
         (event) => {
           onAddProjectCollection(collectionId)
+          onMetricsAddCollectionProject({
+            collectionConceptId: collectionId,
+            view: 'list',
+            page: 'collections'
+          })
+
           event.stopPropagation()
         }
       }
@@ -162,6 +172,35 @@ export const CollectionResultsItem = forwardRef(({
       title="Remove collection from the current project"
     />
   )
+
+  const availableCustomizationsIcons = (
+    <AvailableCustomizationsIcons
+      hasSpatialSubsetting={hasSpatialSubsetting}
+      hasVariables={hasVariables}
+      hasTransforms={hasTransforms}
+      hasFormats={hasFormats}
+      hasTemporalSubsetting={hasTemporalSubsetting}
+      hasCombine={hasCombine}
+    />
+  )
+
+  const availableCustomizationsTooltipIcons = (
+    <AvailableCustomizationsTooltipIcons
+      hasSpatialSubsetting={hasSpatialSubsetting}
+      hasVariables={hasVariables}
+      hasTransforms={hasTransforms}
+      hasFormats={hasFormats}
+      hasTemporalSubsetting={hasTemporalSubsetting}
+      hasCombine={hasCombine}
+    />
+  )
+
+  const supportsDataCustomizations = hasSpatialSubsetting
+    || hasVariables
+    || hasTransforms
+    || hasFormats
+    || hasTemporalSubsetting
+    || hasCombine
 
   const component = (
     <div
@@ -225,15 +264,18 @@ export const CollectionResultsItem = forwardRef(({
                     />
                   )
                 }
-                <CustomizableIcons
-                  hasSpatialSubsetting={hasSpatialSubsetting}
-                  hasVariables={hasVariables}
-                  hasTransforms={hasTransforms}
-                  hasFormats={hasFormats}
-                  hasTemporalSubsetting={hasTemporalSubsetting}
-                  hasCombine={hasCombine}
-                  forAccessMethodRadio={false}
-                />
+                {
+                  supportsDataCustomizations && (
+                    <MetaIcon
+                      id="feature-icon-list-view__customize"
+                      icon={Settings}
+                      label="Customize"
+                      tooltipClassName="collection-results-item__tooltip text-align-left"
+                      tooltipContent={availableCustomizationsTooltipIcons}
+                      metadata={availableCustomizationsIcons}
+                    />
+                  )
+                }
                 {
                   cloudHosted && (
                     <MetaIcon
@@ -415,6 +457,7 @@ CollectionResultsItem.displayName = 'CollectionResultsItem'
 CollectionResultsItem.propTypes = {
   collectionMetadata: collectionMetadataPropType.isRequired,
   onAddProjectCollection: PropTypes.func.isRequired,
+  onMetricsAddCollectionProject: PropTypes.func.isRequired,
   onRemoveCollectionFromProject: PropTypes.func.isRequired,
   onViewCollectionDetails: PropTypes.func.isRequired,
   onViewCollectionGranules: PropTypes.func.isRequired

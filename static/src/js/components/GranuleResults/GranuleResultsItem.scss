@@ -110,6 +110,13 @@
     }
   }
 
+  &__highlighted-title {
+    font-weight: 500;
+    color: $color__carbon--90;
+    background-color: rgba($color__active-green, 0.325);
+    padding: 0 0.125rem;
+  }
+
   &__more-actions-dropdown {
     padding: calc($spacer / 2);
     padding-left: 0;
@@ -258,7 +265,8 @@
   }
 
   &__button,
-  .granule-results-data-links-button__button {
+  .granule-results-data-links-button__button,
+  .granule-results-download-notebook-button__button {
     display: flex;
     align-items: center;
     justify-content: center;

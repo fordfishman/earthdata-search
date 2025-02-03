@@ -3,12 +3,14 @@ import PropTypes from 'prop-types'
 import classNames from 'classnames'
 
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
-import { Check } from '@edsc/earthdata-react-icons/horizon-design-system/hds/ui'
+import { Check, Settings } from '@edsc/earthdata-react-icons/horizon-design-system/hds/ui'
 import { FaQuestionCircle } from 'react-icons/fa'
 
 import EDSCIcon from '../../EDSCIcon/EDSCIcon'
 import ExternalLink from '../../ExternalLink/ExternalLink'
-import CustomizableIcons from '../../CustomizableIcons/CustomizableIcons'
+import AvailableCustomizationsIcons from '../../AvailableCustomizationsIcons/AvailableCustomizationsIcons'
+import AvailableCustomizationsTooltipIcons from '../../AvailableCustomizationsIcons/AvailableCustomizationsTooltipIcons'
+import MetaIcon from '../../MetaIcon/MetaIcon'
 
 import './AccessMethodRadio.scss'
 
@@ -40,7 +42,6 @@ export const AccessMethodRadio = ({
       'access-method-radio--disable-button': disabled
     }
   ]
-
   const [showTooltip, setShowTooltip] = useState(false)
 
   const labelClassName = classNames(labelClasses)
@@ -53,6 +54,28 @@ export const AccessMethodRadio = ({
     hasTemporalSubsetting = false,
     hasCombine = false
   } = customizationOptions || {}
+
+  const availableCustomizationsIcons = (
+    <AvailableCustomizationsIcons
+      hasSpatialSubsetting={hasSpatialSubsetting}
+      hasVariables={hasVariables}
+      hasTransforms={hasTransforms}
+      hasFormats={hasFormats}
+      hasTemporalSubsetting={hasTemporalSubsetting}
+      hasCombine={hasCombine}
+    />
+  )
+
+  const availableCustomizationsTooltipIcons = (
+    <AvailableCustomizationsTooltipIcons
+      hasSpatialSubsetting={hasSpatialSubsetting}
+      hasVariables={hasVariables}
+      hasTransforms={hasTransforms}
+      hasFormats={hasFormats}
+      hasTemporalSubsetting={hasTemporalSubsetting}
+      hasCombine={hasCombine}
+    />
+  )
 
   return (
     <label
@@ -71,19 +94,6 @@ export const AccessMethodRadio = ({
         onClick={onClick}
         disabled={disabled}
       />
-      {
-        customizationOptions && (
-          <CustomizableIcons
-            hasSpatialSubsetting={hasSpatialSubsetting}
-            hasVariables={hasVariables}
-            hasTransforms={hasTransforms}
-            hasFormats={hasFormats}
-            hasTemporalSubsetting={hasTemporalSubsetting}
-            hasCombine={hasCombine}
-            forAccessMethodRadio
-          />
-        )
-      }
       <div className="access-method-radio__radio">
         { checked && <EDSCIcon icon={Check} className="access-method-radio__radio-icon" /> }
       </div>
@@ -98,6 +108,18 @@ export const AccessMethodRadio = ({
                 {subtitle}
               </span>
             </span>
+            {
+              customizationOptions && (
+                <MetaIcon
+                  id="feature-icon-list-view__customize"
+                  icon={Settings}
+                  label="Customize"
+                  tooltipClassName="text-align-left"
+                  tooltipContent={availableCustomizationsTooltipIcons}
+                  metadata={availableCustomizationsIcons}
+                />
+              )
+            }
           </div>
           <div className="access-method-radio__header-content">
             <span className="access-method-radio__description">
@@ -125,7 +147,7 @@ export const AccessMethodRadio = ({
               overlay={
                 (
                   <Tooltip
-                    className="tooltip--ta-left tooltip--wide"
+                    className="tooltip--ta-left"
                     onMouseEnter={() => externalLink && setShowTooltip(true)}
                     onMouseLeave={() => externalLink && setShowTooltip(false)}
                   >
@@ -135,7 +157,7 @@ export const AccessMethodRadio = ({
                       </p>
                       {
                         externalLink && (
-                          <ExternalLink href={externalLink.link} className="d-inline-block mt-3" variant="light">
+                          <ExternalLink href={externalLink.link} className="d-inline-block mt-3 mb-1" variant="light">
                             {externalLink.message}
                           </ExternalLink>
                         )

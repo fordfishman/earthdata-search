@@ -56,7 +56,7 @@ To ensure that you're using the correct version of Node it is recommended that y
 
     nvm use
 
-##### Serverless Framework
+##### Running Serverless Framework locally
 
 Earthdata Search utilizes the [Serverless Framework](https://serverless.com/) for managing AWS resources. In order to fully run and manage the application you'll need to install it:
 
@@ -74,7 +74,7 @@ Start the PostgreSQL server:
 
     # If you have never used brew services before:
     brew tap homebrew/services
-    
+
     # Start the server:
     brew services start postgresql
 
@@ -123,6 +123,12 @@ To run the migrations locally:
 Optionally, we can run the migration locally and not within a deployed Lambda. When deployed our database migrations run within Lambda due to the fact that in non-development environments our resources are not publicly accessible. To run the migrations you'll need to invoke the Lambda:
 
     serverless invoke local --function migrateDatabase
+
+###### Creating a new database migration
+
+To create a new database migration use this command to ensure the migration follow the same timestamp name scheme.
+
+    npm run migrate create name-of-migration
 
 ### Building the Application
 
@@ -202,6 +208,7 @@ This application runs in a VPC for NASA security purposes, therefore the followi
 - VPC_ID
 - SUBNET_ID_A
 - SUBNET_ID_B
+- INTERNET_SERVICE_EAST_VPC
 
 For production use, this application uses Scatter Swap to obfuscate some IDs -- the library does not require a value be provided but if you'd like to control it you can set the following ENV vars:
 

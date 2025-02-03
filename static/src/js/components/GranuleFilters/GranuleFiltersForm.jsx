@@ -8,23 +8,26 @@ import {
   Tooltip,
   Row
 } from 'react-bootstrap'
-
+import { FaQuestionCircle } from 'react-icons/fa'
 import moment from 'moment'
 
 import { findGridByName } from '../../util/grid'
 import { getTemporalDateFormat } from '../../../../../sharedUtils/edscDate'
 import { getValueForTag } from '../../../../../sharedUtils/tags'
 import { pluralize } from '../../util/pluralize'
+import { getApplicationConfig } from '../../../../../sharedUtils/config'
 
 import SidebarFiltersItem from '../Sidebar/SidebarFiltersItem'
 import SidebarFiltersList from '../Sidebar/SidebarFiltersList'
 import TemporalSelection from '../TemporalSelection/TemporalSelection'
 import Button from '../Button/Button'
+import EDSCIcon from '../EDSCIcon/EDSCIcon'
 
 import './GranuleFiltersForm.scss'
 
 /**
  * Renders GranuleFiltersForm.
+ * @param {Object} props - The props passed into the component.
  * @param {Object} props.collectionMetadata - The focused collections metadata.
  * @param {Object} props.errors - Form errors provided by Formik.
  * @param {Object} props.excludedGranuleIds - The list of excluded granules.
@@ -33,12 +36,8 @@ import './GranuleFiltersForm.scss'
  * @param {Function} props.handleSubmit - Callback function passed from the container.
  * @param {Function} props.setFieldTouched - Callback function provided by Formik.
  * @param {Function} props.setFieldValue - Callback function provided by Formik.
- * @param {Object} props - The props passed into the component.
- * @param {Object} props.collectionMetadata - The focused collection metadata.
  * @param {Object} props.onMetricsGranuleFilter - Callback function passed from actions.
  * @param {Object} props.onUndoExcludeGranule - Callback function passed from actions.
- * @param {Function} props.setFieldTouched - Callback function provided by Formik.
- * @param {Function} props.setFieldValue - Callback function provided by Formik.
  * @param {Object} props.touched - Form state provided by Formik.
  * @param {Object} props.values - Form values provided by Formik.
  */
@@ -76,6 +75,15 @@ export const GranuleFiltersForm = (props) => {
 
   // For recurring dates we don't show the year, it's displayed on the slider
   const temporalDateFormat = getTemporalDateFormat(isRecurring)
+
+  const {
+    minimumTemporalDateString,
+    temporalDateFormatFull
+  } = getApplicationConfig()
+  const minDate = moment(
+    minimumTemporalDateString,
+    temporalDateFormatFull
+  )
 
   const {
     min: cloudCoverMin = '',
@@ -276,43 +284,64 @@ export const GranuleFiltersForm = (props) => {
                     Granule ID(s)
                   </Form.Label>
                   <OverlayTrigger
-                    placement="bottom"
+                    placement="top"
                     overlay={
                       (
-                        <Tooltip
-                          id="tooltip__granule-search"
-                          className="tooltip--large tooltip--ta-left tooltip--wide"
-                        >
-                          <strong>Wildcards:</strong>
-                          {' '}
-                          <ul className="m-0">
+                        <Tooltip id="granule-filters-form-id-filter-tooltip" className="tooltip--ta-left tooltip--wide">
+                          <p>
+                            Filter granules by using a granule ID.
+                            Enter an ID to find an exact match or use a wildcard
+                            and/or delimiter to search using a more complex query.
+                          </p>
+                          <strong className="granule-filters-form__readable-granule-name-tooltip-title">
+                            Search granules using wildcard characters
+                          </strong>
+                          <ul className="m-0 font-size granule-filters-form__readable-granule-name-tooltip-list">
                             <li>
-                              * (asterisk) matches any number of characters
+                              Question marks
+                              {' ('}
+                              <strong className="font-weight-bold">?</strong>
+                              {') '}
+                              match a single character in that location
                             </li>
                             <li>
-                              ? (question mark) matches exactly one character.
+                              Asterisks
+                              {' ('}
+                              <strong className="font-weight-bold">*</strong>
+                              {') '}
+                              match any number of characters in that location
                             </li>
                           </ul>
                           <br />
-                          <strong>Delimiters:</strong>
-                          {' '}
-                          Separate multiple granule IDs by commas.
+                          <strong className="granule-filters-form__readable-granule-name-tooltip-title">
+                            Search granules using multiple IDs
+                          </strong>
+                          <ul className="m-0 granule-filters-form__readable-granule-name-tooltip-list">
+                            <li>
+                              Commas
+                              {' ('}
+                              <strong className="font-weight-bold">,</strong>
+                              {') '}
+                              are used to separate multiple searches
+                            </li>
+                          </ul>
                         </Tooltip>
                       )
                     }
                   >
-                    <Form.Control
-                      name="readableGranuleName"
-                      data-testid="granule-filters__readable-granule-name"
-                      size="sm"
-                      type="text"
-                      placeholder="Search Single or Multiple Granule IDs..."
-                      value={readableGranuleName}
-                      onChange={handleChange}
-                      onBlur={submitOnBlur}
-                      onKeyPress={submitOnKeypress}
-                    />
+                    <EDSCIcon icon={FaQuestionCircle} size="0.625rem" variant="more-info" aria-label="A question mark in a circle" role="img" />
                   </OverlayTrigger>
+                  <Form.Control
+                    name="readableGranuleName"
+                    data-testid="granule-filters__readable-granule-name"
+                    size="sm"
+                    type="text"
+                    placeholder="Example: *_20240101_*,*_20240102_*"
+                    value={readableGranuleName}
+                    onChange={handleChange}
+                    onBlur={submitOnBlur}
+                    onKeyPress={submitOnKeypress}
+                  />
                   {
                     readableGranuleNameTouched && (
                       <Form.Control.Feedback type="invalid">
@@ -417,7 +446,15 @@ export const GranuleFiltersForm = (props) => {
                 size="sm"
                 format={temporalDateFormat}
                 temporal={temporal}
+                displayStartDate={temporal.startDate}
+                displayEndDate={temporal.endDate}
                 validate={false}
+                onSliderChange={
+                  (value) => {
+                    setFieldValue('temporal.startDate', moment(temporal.startDate).year(value.min).toISOString())
+                    setFieldValue('temporal.endDate', moment(temporal.endDate).year(value.max).toISOString())
+                  }
+                }
                 onRecurringToggle={
                   (event) => {
                     const isChecked = event.target.checked
@@ -425,17 +462,23 @@ export const GranuleFiltersForm = (props) => {
                     setFieldValue('temporal.isRecurring', isChecked)
                     setFieldTouched('temporal.isRecurring', isChecked)
 
-                    // If recurring is checked and values exist, set the recurringDay values
-                    if (isChecked) {
-                      const newStartDate = moment(temporal.startDate || undefined).utc()
+                    if (isChecked && temporal) {
                       if (temporal.startDate) {
-                        setFieldValue('temporal.recurringDayStart', newStartDate.dayOfYear())
-                      }
+                        const startDate = moment(temporal.startDate).utc()
 
-                      const newEndDate = moment(temporal.endDate || undefined).utc()
-                      if (temporal.endDate) {
-                        // Use the start year to calculate the end day of year. This avoids leap years potentially causing day mismatches
-                        setFieldValue('temporal.recurringDayEnd', newEndDate.year(newStartDate.year()).dayOfYear())
+                        if (temporal.endDate) {
+                          const endDate = moment(temporal.endDate).utc()
+
+                          if (startDate.year() === endDate.year()) {
+                            // Preserve original month/day while setting to minimum year
+                            const newStartDate = moment(startDate).year(minDate.year())
+                            setFieldValue('temporal.startDate', newStartDate.toISOString())
+                          }
+
+                          setFieldValue('temporal.recurringDayStart', startDate.dayOfYear())
+                          // Use the start year to calculate the end day of year. This avoids leap years potentially causing day mismatches
+                          setFieldValue('temporal.recurringDayEnd', endDate.year(startDate.year()).dayOfYear())
+                        }
                       }
                     }
 
@@ -479,45 +522,87 @@ export const GranuleFiltersForm = (props) => {
                   }
                 }
                 onSubmitStart={
-                  (startDate) => {
-                  // eslint-disable-next-line no-underscore-dangle
-                    const value = startDate.isValid() ? startDate.toISOString() : startDate._i
+                  (startDate, shouldSubmit) => {
+                    const { temporal: newTemporal } = values
+
+                    // If the recurring toggle is toggled on, the format of the date drops the year, when
+                    // converted into a moment object, this will erroneously set the year to the current year.
+                    // To avoid this, we check if the temporal is recurring and set the year to the existing year in
+                    // state.
+                    if (newTemporal.isRecurring) {
+                      const existingStartDate = moment(newTemporal.startDate)
+                      if (existingStartDate.isValid()) {
+                        const existingStartDateYear = existingStartDate.year()
+                        startDate.year(existingStartDateYear)
+                      }
+                    }
+
+                    const { input } = startDate.creationData()
+                    const value = startDate.isValid() ? startDate.toISOString() : input
                     setFieldValue('temporal.startDate', value)
                     setFieldTouched('temporal.startDate')
 
-                    const { temporal: newTemporal } = values
-                    if (newTemporal.isRecurring) {
-                      setFieldValue('temporal.recurringDayStart', startDate.dayOfYear())
+                    if (newTemporal.isRecurring && newTemporal.endDate && startDate.isValid()) {
+                      const endDate = moment(newTemporal.endDate).utc()
+
+                      if (startDate.year() === endDate.year()) {
+                        // Preserve original month/day while setting to minimum year
+                        startDate.year(minDate.year())
+                        setFieldValue('temporal.startDate', startDate.toISOString())
+                      }
                     }
 
-                    handleSubmit()
+                    // Only call handleSubmit if `onSubmitStart` was called
+                    if (shouldSubmit && (startDate.isValid() || !input)) {
+                      handleSubmit()
 
-                    // Submit usage metric for setting Start Date granule filter
-                    onMetricsGranuleFilter({
-                      type: 'Set Start Date',
-                      value
-                    })
+                      // Submit usage metric for setting Start Date granule filter
+                      onMetricsGranuleFilter({
+                        type: 'Set Start Date',
+                        value
+                      })
+                    }
                   }
                 }
                 onSubmitEnd={
-                  (endDate) => {
-                  // eslint-disable-next-line no-underscore-dangle
-                    const value = endDate.isValid() ? endDate.toISOString() : endDate._i
+                  (endDate, shouldSubmit) => {
+                    const { temporal: newTemporal } = values
+
+                    // Like with start date, if the recurring toggle is toggled on, the format of the date drops the year.
+                    // To avoid this, we check if the temporal is recurring and set the year to the existing year in state.
+                    if (newTemporal.isRecurring) {
+                      const existingEndDate = moment(newTemporal.endDate)
+                      if (existingEndDate.isValid()) {
+                        const existingEndDateYear = existingEndDate.year()
+                        endDate.year(existingEndDateYear)
+                      }
+                    }
+
+                    const { input } = endDate.creationData()
+                    const value = endDate.isValid() ? endDate.toISOString() : input
+
                     setFieldValue('temporal.endDate', value)
                     setFieldTouched('temporal.endDate')
 
-                    const { temporal: newTemporal } = values
-                    if (newTemporal.isRecurring) {
-                      setFieldValue('temporal.recurringDayEnd', endDate.dayOfYear())
+                    if (newTemporal.isRecurring && newTemporal.startDate && endDate.isValid()) {
+                      const startDate = moment(newTemporal.startDate).utc()
+
+                      if (startDate.year() === endDate.year()) {
+                        // Preserve original month/day while setting to minimum year
+                        startDate.year(minDate.year())
+                        setFieldValue('temporal.startDate', startDate.toISOString())
+                      }
                     }
 
-                    handleSubmit()
+                    if (shouldSubmit && (endDate.isValid() || !input)) {
+                      handleSubmit()
 
-                    // Submit usage metric for setting End Date granule filter
-                    onMetricsGranuleFilter({
-                      type: 'Set End Date',
-                      value
-                    })
+                      // Submit usage metric for setting End Date granule filter
+                      onMetricsGranuleFilter({
+                        type: 'Set End Date',
+                        value
+                      })
+                    }
                   }
                 }
               />
@@ -822,35 +907,47 @@ export const GranuleFiltersForm = (props) => {
                             size="sm"
                             format={temporalDateFormat}
                             temporal={equatorCrossingDate}
+                            displayStartDate={equatorCrossingDate.startDate}
+                            displayEndDate={equatorCrossingDate.endDate}
+                            onSliderChange={
+                              (value) => {
+                                setFieldValue('temporal.startDate', moment(temporal.startDate).year(value.min).toISOString())
+                                setFieldValue('temporal.endDate', moment(temporal.endDate).year(value.max).toISOString())
+                              }
+                            }
                             validate={false}
                             onSubmitStart={
-                              (startDate) => {
-                                const value = startDate.isValid()
-                                // eslint-disable-next-line no-underscore-dangle
-                                  ? startDate.toISOString() : startDate._i
+                              (startDate, shouldSubmit) => {
+                                const { input } = startDate.creationData()
+                                const value = startDate.isValid() ? startDate.toISOString() : input
+
                                 setFieldValue('equatorCrossingDate.startDate', value)
                                 setFieldTouched('equatorCrossingDate.startDate')
 
-                                handleSubmit()
-                                onMetricsGranuleFilter({
-                                  type: 'Equatorial Crossing Set Start Date',
-                                  value
-                                })
+                                if (shouldSubmit && (startDate.isValid() || !input)) {
+                                  handleSubmit()
+                                  onMetricsGranuleFilter({
+                                    type: 'Equatorial Crossing Set Start Date',
+                                    value
+                                  })
+                                }
                               }
                             }
                             onSubmitEnd={
-                              (endDate) => {
-                                const value = endDate.isValid()
-                                // eslint-disable-next-line no-underscore-dangle
-                                  ? endDate.toISOString() : endDate._i
+                              (endDate, shouldSubmit) => {
+                                const { input } = endDate.creationData()
+                                const value = endDate.isValid() ? endDate.toISOString() : input
+
                                 setFieldValue('equatorCrossingDate.endDate', value)
                                 setFieldTouched('equatorCrossingDate.endDate')
 
-                                handleSubmit()
-                                onMetricsGranuleFilter({
-                                  type: 'Equatorial Crossing Set End Date',
-                                  value
-                                })
+                                if (shouldSubmit && (endDate.isValid() || !input)) {
+                                  handleSubmit()
+                                  onMetricsGranuleFilter({
+                                    type: 'Equatorial Crossing Set End Date',
+                                    value
+                                  })
+                                }
                               }
                             }
                           />

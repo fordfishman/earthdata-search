@@ -105,6 +105,7 @@ import timelineTimelineHeaders from './__mocks__/timeline/timeline.headers.json'
 import graphQlHeaders from './__mocks__/common/graphql.headers.json'
 
 import { login } from '../../../../support/login'
+import { setupTests } from '../../../../support/setupTests'
 
 const defaultCmrPageSize = 20
 
@@ -124,7 +125,12 @@ const testResultsSize = async (page, cmrHits) => {
 }
 
 test.describe('Path /search/granules', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await setupTests({
+      page,
+      context
+    })
+
     await page.clock.setFixedTime(new Date('2021-06-01'))
   })
 

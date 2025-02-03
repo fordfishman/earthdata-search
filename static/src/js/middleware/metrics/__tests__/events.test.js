@@ -4,6 +4,8 @@ import * as helpers from '../helpers'
 import {
   virtualPageview,
   dataAccess,
+  addCollectionProject,
+  addGranuleProject,
   browseGranuleImage,
   defaultClick,
   granuleFilter,
@@ -13,10 +15,13 @@ import {
   spatialEdit,
   spatialSelection,
   timing,
-  collectionSortChange
+  collectionSortChange,
+  temporalFilter
 } from '../events'
 import {
   METRICS_DATA_ACCESS,
+  METRICS_ADD_COLLECTION_PROJECT,
+  METRICS_ADD_GRANULE_PROJECT,
   METRICS_CLICK,
   METRICS_COLLECTION_SORT_CHANGE,
   METRICS_GRANULE_FILTER,
@@ -26,7 +31,8 @@ import {
   METRICS_RELATED_COLLECTION,
   METRICS_SPATIAL_EDIT,
   METRICS_SPATIAL_SELECTION,
-  METRICS_TIMING
+  METRICS_TIMING,
+  METRICS_TEMPORAL_FILTER
 } from '../constants'
 
 const dataLayerMock = global.dataLayer.push
@@ -385,6 +391,54 @@ describe('events', () => {
     })
   })
 
+  describe('add collection to project', () => {
+    test('pushes to the dataLayer', () => {
+      const action = {
+        type: METRICS_ADD_COLLECTION_PROJECT,
+        payload: {
+          collectionConceptId: 'C100000-EDSC',
+          page: 'collections',
+          view: 'table'
+        }
+      }
+
+      addCollectionProject(action)
+
+      expect(dataLayerMock).toHaveBeenCalledTimes(1)
+      expect(dataLayerMock).toHaveBeenCalledWith({
+        event: 'addCollectionToProject',
+        addProjectCollectionConceptId: 'C100000-EDSC',
+        addProjectCollectionPage: 'collections',
+        addProjectCollectionResultsView: 'table'
+      })
+    })
+  })
+
+  describe('add granule to project', () => {
+    test('pushes to the dataLayer', () => {
+      const action = {
+        type: METRICS_ADD_GRANULE_PROJECT,
+        payload: {
+          collectionConceptId: 'C100000-EDSC',
+          granuleConceptId: 'G100000-EDSC',
+          page: 'granules',
+          view: 'list'
+        }
+      }
+
+      addGranuleProject(action)
+
+      expect(dataLayerMock).toHaveBeenCalledTimes(1)
+      expect(dataLayerMock).toHaveBeenCalledWith({
+        event: 'addGranuleToProject',
+        addProjectCollectionConceptId: 'C100000-EDSC',
+        addProjectGranuleConceptId: 'G100000-EDSC',
+        addProjectGranulePage: 'granules',
+        addProjectGranuleResultsView: 'list'
+      })
+    })
+  })
+
   describe('granuleFilter', () => {
     test('pushes to the dataLayer', () => {
       const action = {
@@ -403,6 +457,28 @@ describe('events', () => {
         granuleFilterCategory: 'Granule Filter',
         granuleFilterEventAction: 'Some Type',
         granuleFilterEventValue: 'Some Value'
+      })
+    })
+  })
+
+  describe('temporalFilter', () => {
+    test('pushes to the dataLayer', () => {
+      const action = {
+        type: METRICS_TEMPORAL_FILTER,
+        payload: {
+          type: 'Some Type',
+          value: 'Some Value'
+        }
+      }
+
+      temporalFilter(action)
+
+      expect(dataLayerMock).toHaveBeenCalledTimes(1)
+      expect(dataLayerMock).toHaveBeenCalledWith({
+        event: 'temporalFilter',
+        temporalFilterCategory: 'Temporal Filter',
+        temporalFilterEventAction: 'Some Type',
+        temporalFilterEventValue: 'Some Value'
       })
     })
   })

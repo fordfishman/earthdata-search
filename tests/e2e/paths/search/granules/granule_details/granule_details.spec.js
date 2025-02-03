@@ -1,5 +1,7 @@
 import { test, expect } from 'playwright-test-coverage'
+
 import { graphQlGetCollection } from '../../../../../support/graphQlGetCollection'
+import { setupTests } from '../../../../../support/setupTests'
 
 import collectionsBody from './__mocks__/collections.body.json'
 import commonHeaders from './__mocks__/common.headers.json'
@@ -10,6 +12,13 @@ import graphQlHeaders from './__mocks__/graphql.headers.json'
 import formattedGranuleMetadata from './__mocks__/formattedGranuleMetadata.json'
 
 test.describe('Path /search/granules/granule-details', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setupTests({
+      page,
+      context
+    })
+  })
+
   test('granule loads correctly', async ({ page }) => {
     const collectionId = 'C1214470488-ASF'
     const granuleId = 'G1287941210-ASF'

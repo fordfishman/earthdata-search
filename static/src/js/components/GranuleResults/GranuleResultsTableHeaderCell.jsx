@@ -10,12 +10,14 @@ import {
 import { AlertInformation } from '@edsc/earthdata-react-icons/horizon-design-system/earthdata/ui'
 
 import murmurhash3 from '../../util/murmurhash3'
+import { getValueForTag } from '../../../../../sharedUtils/tags'
 
 import GranuleResultsDataLinksButton from './GranuleResultsDataLinksButton'
 import Button from '../Button/Button'
 import MoreActionsDropdown from '../MoreActionsDropdown/MoreActionsDropdown'
 import MoreActionsDropdownItem from '../MoreActionsDropdown/MoreActionsDropdownItem'
 import PortalFeatureContainer from '../../containers/PortalFeatureContainer/PortalFeatureContainer'
+import GranuleResultsDownloadNotebookButton from './GranuleResultsDownloadNotebookButton'
 
 const GranuleResultsTableHeaderCell = (props) => {
   const { column, cell, row } = props
@@ -31,15 +33,22 @@ const GranuleResultsTableHeaderCell = (props) => {
 
   const {
     collectionId,
+    collectionQuerySpatial,
+    collectionTags,
     directDistributionInformation,
+    generateNotebook,
     isGranuleInProject,
     location,
     onAddGranuleToProjectCollection,
     onExcludeGranule,
     onFocusedGranuleChange,
+    onGenerateNotebook,
+    onMetricsAddGranuleProject,
     onMetricsDataAccess,
     onRemoveGranuleFromProjectCollection
   } = customProps
+
+  const generateNotebookTag = getValueForTag('notebook_generation', collectionTags)
 
   const isInProject = isGranuleInProject(id)
 
@@ -72,8 +81,9 @@ const GranuleResultsTableHeaderCell = (props) => {
                 <Button
                   className="button granule-results-table__granule-action granule-results-table__granule-action--add"
                   type="button"
-                  label="Add granule"
-                  title="Add granule"
+                  label="Add granule to project"
+                  tooltip="Add granule to project"
+                  tooltipId={`add-granule-table-tooltip-${id}`}
                   icon={Plus}
                   iconSize="0.75rem"
                   onClick={
@@ -81,6 +91,13 @@ const GranuleResultsTableHeaderCell = (props) => {
                       onAddGranuleToProjectCollection({
                         collectionId,
                         granuleId: id
+                      })
+
+                      onMetricsAddGranuleProject({
+                        collectionConceptId: collectionId,
+                        granuleConceptId: id,
+                        page: 'granules',
+                        view: 'table'
                       })
 
                       // Prevent event bubbling up to the granule focus event.
@@ -93,8 +110,9 @@ const GranuleResultsTableHeaderCell = (props) => {
                 <Button
                   className="button granule-results-table__granule-action granule-results-table__granule-action--remove"
                   type="button"
-                  label="Remove granule"
-                  title="Remove granule"
+                  label="Remove granule from project"
+                  tooltip="Remove granule from project"
+                  tooltipId={`remove-granule-table-tooltip-${id}`}
                   icon={Minus}
                   iconSize="0.75rem"
                   onClick={
@@ -115,12 +133,24 @@ const GranuleResultsTableHeaderCell = (props) => {
         {
           onlineAccessFlag && (
             <GranuleResultsDataLinksButton
+              buttonVariant="naked"
               collectionId={collectionId}
               directDistributionInformation={directDistributionInformation}
               dataLinks={dataLinks}
+              id={id}
               s3Links={s3Links}
               onMetricsDataAccess={onMetricsDataAccess}
-              buttonVariant="naked"
+            />
+          )
+        }
+        {
+          generateNotebookTag && (
+            <GranuleResultsDownloadNotebookButton
+              collectionQuerySpatial={collectionQuerySpatial}
+              granuleId={id}
+              generateNotebook={generateNotebook}
+              generateNotebookTag={generateNotebookTag}
+              onGenerateNotebook={onGenerateNotebook}
             />
           )
         }
@@ -168,7 +198,10 @@ GranuleResultsTableHeaderCell.propTypes = {
   column: PropTypes.shape({
     customProps: PropTypes.shape({
       collectionId: PropTypes.string,
+      collectionQuerySpatial: PropTypes.shape({}).isRequired,
+      collectionTags: PropTypes.shape({}).isRequired,
       directDistributionInformation: PropTypes.shape({}),
+      generateNotebook: PropTypes.shape({}).isRequired,
       isGranuleInProject: PropTypes.func,
       location: PropTypes.shape({
         search: PropTypes.string
@@ -176,6 +209,8 @@ GranuleResultsTableHeaderCell.propTypes = {
       onAddGranuleToProjectCollection: PropTypes.func,
       onExcludeGranule: PropTypes.func,
       onFocusedGranuleChange: PropTypes.func,
+      onGenerateNotebook: PropTypes.func.isRequired,
+      onMetricsAddGranuleProject: PropTypes.func,
       onMetricsDataAccess: PropTypes.func,
       onRemoveGranuleFromProjectCollection: PropTypes.func
     })

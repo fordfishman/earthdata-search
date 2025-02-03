@@ -1,5 +1,7 @@
 import {
   METRICS_BROWSE_GRANULE_IMAGE,
+  METRICS_ADD_COLLECTION_PROJECT,
+  METRICS_ADD_GRANULE_PROJECT,
   METRICS_CLICK,
   METRICS_COLLECTION_SORT_CHANGE,
   METRICS_DATA_ACCESS,
@@ -9,11 +11,14 @@ import {
   METRICS_GRANULE_FILTER,
   METRICS_SPATIAL_SELECTION,
   METRICS_TIMELINE,
-  METRICS_TIMING
+  METRICS_TIMING,
+  METRICS_TEMPORAL_FILTER
 } from '../constants'
 
 import {
   metricsDataAccess,
+  metricsAddCollectionProject,
+  metricsAddGranuleProject,
   metricsClick,
   metricsBrowseGranuleImage,
   metricsGranuleFilter,
@@ -23,7 +28,8 @@ import {
   metricsSpatialEdit,
   metricsSpatialSelection,
   metricsTiming,
-  metricsCollectionSortChange
+  metricsCollectionSortChange,
+  metricsTemporalFilter
 } from '../actions'
 
 describe('actions', () => {
@@ -41,6 +47,42 @@ describe('actions', () => {
       } = action
 
       expect(type).toEqual(METRICS_DATA_ACCESS)
+      expect(payload).toEqual(data)
+    })
+  })
+
+  describe('metricsAddCollectionProject', () => {
+    test('returns the correct action', () => {
+      const data = {
+        test: 'test payload'
+      }
+
+      const action = metricsAddCollectionProject(data)
+
+      const {
+        type,
+        payload
+      } = action
+
+      expect(type).toEqual(METRICS_ADD_COLLECTION_PROJECT)
+      expect(payload).toEqual(data)
+    })
+  })
+
+  describe('metricsAddGranuleProject', () => {
+    test('returns the correct action', () => {
+      const data = {
+        test: 'test payload'
+      }
+
+      const action = metricsAddGranuleProject(data)
+
+      const {
+        type,
+        payload
+      } = action
+
+      expect(type).toEqual(METRICS_ADD_GRANULE_PROJECT)
       expect(payload).toEqual(data)
     })
   })
@@ -163,6 +205,24 @@ describe('actions', () => {
       } = action
 
       expect(type).toEqual(METRICS_GRANULE_FILTER)
+      expect(payload).toEqual(data)
+    })
+  })
+
+  describe('metricsTemporalFilter', () => {
+    test('returns the correct action', () => {
+      const data = {
+        test: 'test payload'
+      }
+
+      const action = metricsTemporalFilter(data)
+
+      const {
+        type,
+        payload
+      } = action
+
+      expect(type).toEqual(METRICS_TEMPORAL_FILTER)
       expect(payload).toEqual(data)
     })
   })

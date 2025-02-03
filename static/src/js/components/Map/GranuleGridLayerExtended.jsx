@@ -248,8 +248,6 @@ export class GranuleGridLayerExtended extends L.GridLayer {
 
     if (!this.gibsTag) return null
 
-    const date = granule.timeStart != null ? granule.timeStart.substring(0, 10) : undefined
-
     let matched = false
 
     // Select only the first layer until we are able to toggle between gibs layers.
@@ -319,11 +317,9 @@ export class GranuleGridLayerExtended extends L.GridLayer {
 
     if (!matched) { return null }
 
-    this.options.time = date
     if (this.options.granule) {
       this._originalUrl = this._originalUrl || this._url
       this._url = config.gibsGranuleUrl || this._originalUrl
-      this.options.time = granule.timeStart.replace(/\.\d{3}Z$/, 'Z')
     } else {
       this._url = this._originalUrl || this._url || config.gibsUrl
     }
@@ -333,7 +329,8 @@ export class GranuleGridLayerExtended extends L.GridLayer {
       x: tilePoint.x,
       y: tilePoint.y,
       z: tilePoint.z,
-      time: this.options.time
+      // If the layerPeriod is `subdaily` use the full datetime, else use only the date
+      time: this.options.layerPeriod?.toLowerCase() === 'subdaily' ? granule.timeStart : granule.timeStart.substring(0, 10)
     }
 
     if (this._map && !this._map.options.crs.infinite) {
@@ -350,7 +347,9 @@ export class GranuleGridLayerExtended extends L.GridLayer {
 
   // Draw the granule tile
   drawTile(canvases, back, tilePoint) {
-    const dpr = window.devicePixelRatio || 1
+    // Round the DPR up to the next whole number. This fixes an issue where
+    // outlines are drawn at the wrong location and scale when DPR is a decimal value.
+    const dpr = Math.ceil(window.devicePixelRatio || 1)
     const {
       imagery: imageryCanvas,
       outline: outlineCanvas
@@ -395,6 +394,7 @@ export class GranuleGridLayerExtended extends L.GridLayer {
       const visibleOverlappingGranulePaths = []
       const overlaps = this.granulePathsOverlappingTile(granule, bounds)
 
+      // Only worry about granule paths which exist in the given tile bounds
       if (overlaps.length > 0) {
         const url = this.getTileUrl(tilePoint, granule)
 
@@ -477,7 +477,13 @@ export class GranuleGridLayerExtended extends L.GridLayer {
     // Draw the granule imagery.
     setTimeout(
       (
-        () => this.drawClippedImagery(imageryCanvas, boundary, paths, nwPoint, tilePoint)
+        () => this.drawClippedImagery(
+          imageryCanvas,
+          boundary,
+          [...paths].reverse(),
+          nwPoint,
+          tilePoint
+        )
       ), 0
     )
 
@@ -525,6 +531,7 @@ export class GranuleGridLayerExtended extends L.GridLayer {
 
       ctx.strokeStyle = this.color
 
+      // New shapes are drawn behind the existing canvas content.
       ctx.globalCompositeOperation = 'destination-over'
 
       if (path.deemphisized !== undefined && !this.isProjectPage) {
@@ -532,6 +539,7 @@ export class GranuleGridLayerExtended extends L.GridLayer {
         ctx.lineWidth = path.deemphisized ? 1 : 1.5
       }
 
+      // Add the path (poly/line) to the context
       addPath(ctx, path)
 
       holes.forEach((hole) => {
@@ -540,15 +548,23 @@ export class GranuleGridLayerExtended extends L.GridLayer {
           ctx.lineWidth = hole.deemphisized ? 1 : 1.5
         }
 
+        // Add the path (poly/line) to the context
         addPath(ctx, { poly: hole.poly.concat().reverse() })
       })
 
+      // Draw the added path(s) on the screen
       ctx.stroke()
+
+      // `boundary` is the leaflet tile's boundary. Without adding these paths to the canvas the `clip()` call inverts
       addPath(ctx, boundary)
+
+      // Uncomment this line to draw tile boundaries on the map.
+      // ctx.stroke()
 
       if (!(path.line != null ? path.line.length : undefined) > 0) ctx.clip()
     })
 
+    // Resets the rendering context to its default state, allowing it to be reused for drawing something else without having to explicitly reset all the properties.
     ctx.restore()
 
     return null

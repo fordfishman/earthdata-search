@@ -9,17 +9,19 @@ import {
 } from 'react-bootstrap'
 import { LinkContainer } from 'react-router-bootstrap'
 import { parse } from 'qs'
-
+import classNames from 'classnames'
 import {
   FaArrowCircleLeft,
   FaFolder,
-  FaLock,
+  FaQuestion,
   FaSave,
-  FaUser
+  FaUser,
+  FaSignInAlt
 } from 'react-icons/fa'
+import TourContext from '../../contexts/TourContext'
+import { getApplicationConfig, getEnvironmentConfig } from '../../../../../sharedUtils/config'
 
 import { deployedEnvironment } from '../../../../../sharedUtils/deployedEnvironment'
-import { getEnvironmentConfig } from '../../../../../sharedUtils/config'
 import { isDownloadPathWithId } from '../../util/isDownloadPathWithId'
 import { isPath } from '../../util/isPath'
 import { locationPropType } from '../../util/propTypes/location'
@@ -29,11 +31,13 @@ import { stringify } from '../../util/url/url'
 import Button from '../Button/Button'
 import PortalFeatureContainer from '../../containers/PortalFeatureContainer/PortalFeatureContainer'
 import PortalLinkContainer from '../../containers/PortalLinkContainer/PortalLinkContainer'
-import EDSCIcon from '../EDSCIcon/EDSCIcon'
 
 import './SecondaryToolbar.scss'
 
 class SecondaryToolbar extends Component {
+  // eslint-disable-next-line react/static-property-placement
+  static contextType = TourContext
+
   constructor(props) {
     super(props)
 
@@ -42,7 +46,8 @@ class SecondaryToolbar extends Component {
 
     this.state = {
       projectDropdownOpen: false,
-      projectName: name
+      projectName: name,
+      newProjectName: ''
     }
 
     this.handleLogout = this.handleLogout.bind(this)
@@ -84,6 +89,7 @@ class SecondaryToolbar extends Component {
     onUpdateProjectName(newProjectName)
   }
 
+  // Needed for Save Project so when the url updates with a project-id we don't refresh the page
   handleKeypress(event) {
     if (event.key === 'Enter') {
       this.handleNameSubmit()
@@ -121,15 +127,33 @@ class SecondaryToolbar extends Component {
       ursProfile
     } = this.props
 
+    const { disableSiteTour } = getApplicationConfig()
     const { first_name: firstName = '' } = ursProfile
 
     const loggedIn = authToken !== ''
     const returnPath = window.location.href
+    const { pathname, search } = location
+    let isMapOverlay = false
+    let needsOverlayPaths = ['/search']
+
+    // Currently saved projects and a project page share a route as such we must determine if we are on the saved projects page
+    // If we are on the project page i.e. a specific project we will have the map included in the DOM and need to adjust the classname
+    if (pathname === '/projects' && search) {
+      needsOverlayPaths = [...needsOverlayPaths, '/projects']
+    }
+
+    // Determine if the current page is a route that displays the map so the correct className can be set
+    if (pathStartsWith(pathname, needsOverlayPaths)) {
+      isMapOverlay = true
+    }
+
+    const mapButtonClass = isMapOverlay ? 'secondary-toolbar__map-page' : ''
+    const secondaryToolbarClassnames = classNames(['secondary-toolbar', { 'secondary-toolbar--map-overlay': isMapOverlay }])
 
     const { apiHost } = getEnvironmentConfig()
 
     // Remove focused collection from back button params
-    const params = parse(location.search, {
+    const params = parse(search, {
       parseArrays: false,
       ignoreQueryPrefix: true
     })
@@ -165,8 +189,8 @@ class SecondaryToolbar extends Component {
     const backToProjectLink = (
       <PortalLinkContainer
         type="button"
-        className="secondary-toolbar__back"
-        bootstrapVariant="naked"
+        className={classNames(['secondary-toolbar__back', { 'focus-light': isMapOverlay }])}
+        bootstrapVariant="light"
         icon={FaArrowCircleLeft}
         label="Back to Project"
         to={
@@ -187,10 +211,13 @@ class SecondaryToolbar extends Component {
 
         return (
           <Button
-            className="secondary-toolbar__project"
+            className={classNames(['secondary-toolbar__project', { 'focus-light': isMapOverlay }])}
             bootstrapVariant="light"
             href={`${apiHost}/login?ee=${earthdataEnvironment}&state=${encodeURIComponent(projectPath)}`}
-            label="View Project"
+            tooltip="View your project"
+            tooltipId="view-project-tooltip"
+            tooltipPlacement="left"
+            icon={FaFolder}
           >
             My Project
           </Button>
@@ -206,10 +233,13 @@ class SecondaryToolbar extends Component {
               search: location.search
             }
           }
-          className="secondary-toolbar__project"
+          className={classNames(['secondary-toolbar__project', { 'focus-light': isMapOverlay }])}
           bootstrapVariant="light"
-          label="View Project"
           icon={FaFolder}
+          iconPosition="left"
+          tooltip="View your project"
+          tooltipId="view-project-tooltip"
+          tooltipPlacement="left"
           updatePath
         >
           My Project
@@ -221,23 +251,29 @@ class SecondaryToolbar extends Component {
 
     const loginLink = (
       <Button
-        className="secondary-toolbar__login"
-        bootstrapVariant="naked"
+        className={
+          classNames(
+            'secondary-toolbar__login-button',
+            { 'focus-light': isMapOverlay }
+          )
+        }
+        bootstrapVariant="light"
         href={`${apiHost}/login?ee=${earthdataEnvironment}&state=${encodeURIComponent(returnPath)}`}
-        icon={FaLock}
-        label="Login"
+        tooltip="Log In with Earthdata Login"
+        tooltipId="login-tooltip"
+        tooltipPlacement="left"
+        icon={FaSignInAlt}
       >
-        Earthdata Login
+        Log In
       </Button>
     )
-
     const loggedInDropdown = (
-      <Dropdown className="secondary-toolbar__user-dropdown">
+      <Dropdown>
         <Dropdown.Toggle
-          label="User menu"
-          className="secondary-toolbar__user-dropdown-toggle"
-          variant="light"
+          className={classNames([`secondary-toolbar__user-dropdown-toggle ${mapButtonClass}`, { 'focus-light': isMapOverlay }])}
+          bootstrapVariant="light"
           as={Button}
+          icon={FaUser}
         >
           {
             firstName && (
@@ -246,7 +282,6 @@ class SecondaryToolbar extends Component {
               </span>
             )
           }
-          <EDSCIcon size="0.825rem" icon={FaUser} />
         </Dropdown.Toggle>
         <Dropdown.Menu>
           <LinkContainer
@@ -317,18 +352,25 @@ class SecondaryToolbar extends Component {
     const saveProjectDropdown = (
       <Dropdown
         show={projectDropdownOpen}
-        className="secondary-toolbar__project-name-dropdown"
+        className={classNames(['secondary-toolbar__project-name-dropdown', { 'focus-light': isMapOverlay }])}
         onToggle={this.onToggleProjectDropdown}
         alignRight
       >
         <Dropdown.Toggle
-          className="secondary-toolbar__project-name-dropdown-toggle"
+          className="secondary-toolbar__project-dropdown-toggle focus-light"
           as={Button}
           onClick={this.onToggleProjectDropdown}
           icon={FaSave}
           iconSize="0.825rem"
-          label="Create a project with your current search"
-        />
+          bootstrapVariant="light"
+          tooltip="Create a project with your current search"
+          tooltipId="create-project-tooltip"
+          tooltipPlacement="left"
+        >
+          <span className="secondary-toolbar__dropdown-text sr-only">
+            Save Project
+          </span>
+        </Dropdown.Toggle>
         <Dropdown.Menu>
           <Form inline className="flex-nowrap secondary-toolbar__project-name-form">
             <Form.Row>
@@ -360,19 +402,53 @@ class SecondaryToolbar extends Component {
       </Dropdown>
     )
 
+    const startTourButton = (
+      <Dropdown
+        show={projectDropdownOpen}
+        className="secondary-toolbar__start-tour-name-dropdown focus-light"
+        onToggle={this.onToggleProjectDropdown}
+        alignRight
+      >
+        <TourContext.Consumer>
+          {
+            ({ setRunTour }) => (
+              <Dropdown.Toggle
+                className={classNames(['secondary-toolbar__start-tour-button', { 'focus-light': isMapOverlay }])}
+                as={Button}
+                aria-label="Start Search Tour"
+                icon={FaQuestion}
+                iconSize="0.825rem"
+                onClick={setRunTour}
+                bootstrapVariant="light"
+                tooltip="Take a tour to learn how to use Earthdata Search"
+                tooltipId="start-tour-tooltip"
+                tooltipPlacement="left"
+                label="Start tour"
+              />
+            )
+          }
+        </TourContext.Consumer>
+      </Dropdown>
+    )
+
     const showSaveProjectDropdown = pathStartsWith(location.pathname, ['/search']) && loggedIn
     const showViewProjectLink = (!pathStartsWith(location.pathname, ['/projects', '/downloads']) && (projectCollectionIds.length > 0 || projectName))
+    const showStartTourButton = location.pathname === '/search' && (disableSiteTour !== 'true')
 
     return (
       secondaryToolbarEnabled
       && (
-        <nav className="secondary-toolbar">
+        <nav
+          className={secondaryToolbarClassnames}
+          data-testid="secondary-toolbar"
+        >
           {isPath(location.pathname, ['/projects']) && backToSearchLink}
           {isDownloadPathWithId(location.pathname) && backToProjectLink}
           <PortalFeatureContainer authentication>
             <>
               {showViewProjectLink && projectLink}
               {showSaveProjectDropdown && saveProjectDropdown}
+              {showStartTourButton && startTourButton}
               {!loggedIn ? loginLink : loggedInDropdown}
             </>
           </PortalFeatureContainer>

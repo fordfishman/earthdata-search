@@ -4,6 +4,8 @@ import classNames from 'classnames'
 
 import { LinkContainer } from 'react-router-bootstrap'
 
+import Highlighter from 'react-highlight-words'
+
 import { AlertInformation } from '@edsc/earthdata-react-icons/horizon-design-system/earthdata/ui'
 import {
   Minus,
@@ -12,6 +14,8 @@ import {
 } from '@edsc/earthdata-react-icons/horizon-design-system/hds/ui'
 
 import { getApplicationConfig } from '../../../../../sharedUtils/config'
+import { getValueForTag } from '../../../../../sharedUtils/tags'
+import { getSearchWords } from '../../util/getSearchWords'
 
 import murmurhash3 from '../../util/murmurhash3'
 import { locationPropType } from '../../util/propTypes/location'
@@ -20,6 +24,7 @@ import Button from '../Button/Button'
 import EDSCIcon from '../EDSCIcon/EDSCIcon'
 import EDSCImage from '../EDSCImage/EDSCImage'
 import GranuleResultsDataLinksButton from './GranuleResultsDataLinksButton'
+import GranuleResultsDownloadNotebookButton from './GranuleResultsDownloadNotebookButton'
 import MoreActionsDropdown from '../MoreActionsDropdown/MoreActionsDropdown'
 import MoreActionsDropdownItem from '../MoreActionsDropdown/MoreActionsDropdownItem'
 import PortalFeatureContainer from '../../containers/PortalFeatureContainer/PortalFeatureContainer'
@@ -30,7 +35,10 @@ import './GranuleResultsItem.scss'
  * Renders GranuleResultsItem.
  * @param {Object} props - The props passed into the component.
  * @param {String} props.collectionId - Granule passed from redux store.
+ * @param {Object} props.collectionQuerySpatial - The spatial for the collection query
+ * @param {Object} props.collectionTags - The tags for the focused collection
  * @param {Object} props.directDistributionInformation - The collection direct distribution information.
+ * @param {Object} props.generateNotebook - The generateNotebook state from the redux store.
  * @param {Object} props.granule - Granule passed from redux store.
  * @param {Boolean} props.isCollectionInProject - Flag designating if the collection is in the project.
  * @param {Function} props.isGranuleInProject - Function designating if the granule is in the project.
@@ -38,12 +46,18 @@ import './GranuleResultsItem.scss'
  * @param {Function} props.onAddGranuleToProjectCollection - Callback to add a granule to the project.
  * @param {Function} props.onExcludeGranule - Callback to exclude a granule.
  * @param {Function} props.onFocusedGranuleChange - Callback to focus a granule.
+ * @param {Function} props.onGenerateNotebook - Callback to generate a notebook.
  * @param {Function} props.onMetricsDataAccess - Callback to capture data access metrics.
+ * @param {Function} props.onMetricsAddGranuleProject - Metrics callback for adding granule to project event.
  * @param {Function} props.onRemoveGranuleFromProjectCollection - Callback to remove a granule to the project.
+ * @param {Array} props.readableGranuleName - Array of Readable Granule Name strings.
  */
 const GranuleResultsItem = forwardRef(({
   collectionId,
+  collectionQuerySpatial,
+  collectionTags,
   directDistributionInformation,
+  generateNotebook,
   granule,
   isCollectionInProject,
   isGranuleInProject,
@@ -52,8 +66,12 @@ const GranuleResultsItem = forwardRef(({
   onExcludeGranule,
   onFocusedGranuleChange,
   onMetricsDataAccess,
-  onRemoveGranuleFromProjectCollection
+  onMetricsAddGranuleProject,
+  onGenerateNotebook,
+  onRemoveGranuleFromProjectCollection,
+  readableGranuleName
 }, ref) => {
+  const generateNotebookTag = getValueForTag('notebook_generation', collectionTags)
   const { thumbnailSize } = getApplicationConfig()
   const {
     height: thumbnailHeight,
@@ -99,6 +117,8 @@ const GranuleResultsItem = forwardRef(({
   const buildThumbnail = () => {
     let element = null
     if (granuleThumbnail) {
+      // Only resize image if it is not an opensearch granule
+      const shouldResizeImage = !isOpenSearch
       element = (
         <EDSCImage
           className="granule-results-item__thumb-image"
@@ -107,7 +127,7 @@ const GranuleResultsItem = forwardRef(({
           width={thumbnailWidth}
           alt={`Browse Image for ${title}`}
           useSpinner={false}
-          isBase64Image
+          resizeImage={shouldResizeImage}
         />
       )
 
@@ -152,12 +172,6 @@ const GranuleResultsItem = forwardRef(({
     handleClick(event)
   }
 
-  const itemTitle = {
-    title: 'Focus granule on map'
-  }
-
-  if (isFocusedGranule) itemTitle.title = 'Unfocus granule on map'
-
   const isInProject = isGranuleInProject(id)
 
   const granuleResultsItemClasses = classNames([
@@ -183,7 +197,6 @@ const GranuleResultsItem = forwardRef(({
       role="button"
       tabIndex={0}
       // eslint-disable-next-line react/jsx-props-no-spreading
-      {...itemTitle}
     >
       <header
         className="granule-results-item__header"
@@ -194,7 +207,11 @@ const GranuleResultsItem = forwardRef(({
           <h3
             className="granule-results-item__title"
           >
-            {title}
+            <Highlighter
+              highlightClassName="granule-results-item__highlighted-title"
+              searchWords={getSearchWords(readableGranuleName)}
+              textToHighlight={title}
+            />
           </h3>
         </div>
         <MoreActionsDropdown
@@ -240,14 +257,22 @@ const GranuleResultsItem = forwardRef(({
                     ? (
                       <Button
                         className="button granule-results-item__button granule-results-item__button--add"
-                        label="Add granule"
-                        title="Add granule"
+                        tooltip="Add granule to project"
+                        label="Add granule to project"
+                        tooltipId={`add-granule-tooltip-${id}`}
                         disabled={isOpenSearch}
                         onClick={
                           (event) => {
                             onAddGranuleToProjectCollection({
                               collectionId,
                               granuleId: id
+                            })
+
+                            onMetricsAddGranuleProject({
+                              collectionConceptId: collectionId,
+                              granuleConceptId: id,
+                              page: 'granules',
+                              view: 'list'
                             })
 
                             // Prevent clicks from bubbling up to other granule item events.
@@ -261,8 +286,9 @@ const GranuleResultsItem = forwardRef(({
                     : (
                       <Button
                         className="button granule-results-item__button granule-results-item__button--remove"
-                        label="Remove granule"
-                        title="Remove granule"
+                        tooltip="Remove granule from project"
+                        tooltipId={`remove-granule-tooltip-${id}`}
+                        label="Remove granule from project"
                         onClick={
                           (event) => {
                             onRemoveGranuleFromProjectCollection({
@@ -283,11 +309,23 @@ const GranuleResultsItem = forwardRef(({
               {
                 onlineAccessFlag && (
                   <GranuleResultsDataLinksButton
+                    id={id}
                     collectionId={collectionId}
                     dataLinks={dataLinks}
                     directDistributionInformation={directDistributionInformation}
                     s3Links={s3Links}
                     onMetricsDataAccess={onMetricsDataAccess}
+                  />
+                )
+              }
+              {
+                generateNotebookTag && (
+                  <GranuleResultsDownloadNotebookButton
+                    collectionQuerySpatial={collectionQuerySpatial}
+                    granuleId={id}
+                    generateNotebook={generateNotebook}
+                    generateNotebookTag={generateNotebookTag}
+                    onGenerateNotebook={onGenerateNotebook}
                   />
                 )
               }
@@ -303,7 +341,10 @@ GranuleResultsItem.displayName = 'GranuleResultsItem'
 
 GranuleResultsItem.propTypes = {
   collectionId: PropTypes.string.isRequired,
+  collectionQuerySpatial: PropTypes.shape({}).isRequired,
+  collectionTags: PropTypes.shape({}).isRequired,
   directDistributionInformation: PropTypes.shape({}).isRequired,
+  generateNotebook: PropTypes.shape({}).isRequired,
   granule: PropTypes.shape({
     id: PropTypes.string,
     isOpenSearch: PropTypes.bool,
@@ -332,8 +373,11 @@ GranuleResultsItem.propTypes = {
   onAddGranuleToProjectCollection: PropTypes.func.isRequired,
   onExcludeGranule: PropTypes.func.isRequired,
   onFocusedGranuleChange: PropTypes.func.isRequired,
+  onGenerateNotebook: PropTypes.func.isRequired,
+  onMetricsAddGranuleProject: PropTypes.func.isRequired,
   onMetricsDataAccess: PropTypes.func.isRequired,
-  onRemoveGranuleFromProjectCollection: PropTypes.func.isRequired
+  onRemoveGranuleFromProjectCollection: PropTypes.func.isRequired,
+  readableGranuleName: PropTypes.arrayOf(PropTypes.string).isRequired
 }
 
 export default GranuleResultsItem

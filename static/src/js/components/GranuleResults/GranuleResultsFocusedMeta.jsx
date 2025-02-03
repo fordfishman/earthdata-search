@@ -18,6 +18,7 @@ import {
 } from 'react-bootstrap'
 
 import { getEnvironmentConfig } from '../../../../../sharedUtils/config'
+import { isLinkBrowse } from '../../../../../sharedUtils/isLinkBrowse'
 
 import Button from '../Button/Button'
 import EDSCModalContainer from '../../containers/EDSCModalContainer/EDSCModalContainer'
@@ -48,8 +49,7 @@ const GranuleResultsFocusedMeta = ({
 
   // Filter the links on the granule to find all browse links with an http/https protocol. This filters
   // any S3 browse links which cause protocol issues.
-  const testProtocol = /^(http|https):\/\//
-  const browseThumbnails = links.filter(({ rel, href }) => rel.includes('/browse#') && testProtocol.test(href))
+  const browseThumbnails = links.filter((link) => isLinkBrowse(link))
 
   const onClickPreviousButton = () => {
     if (activeBrowseImageIndex > 0) {
@@ -349,7 +349,7 @@ const GranuleResultsFocusedMeta = ({
                             alt={description || `Browse image for ${title}`}
                             width={175}
                             height={175}
-                            isBase64Image
+                            resizeImage
                           />
                         )
                       )
@@ -397,7 +397,7 @@ const GranuleResultsFocusedMeta = ({
                           alt={description || `Browse image for ${title}`}
                           width={538}
                           height={538}
-                          isBase64Image
+                          resizeImage
                         />
                       )
                     )

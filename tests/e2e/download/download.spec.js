@@ -6,14 +6,18 @@ import granules from './__mocks__/granules.json'
 import retrievals from './__mocks__/retrievals.json'
 import retrieval from './__mocks__/retrieval.json'
 
+import { setupTests } from '../../support/setupTests'
 import { login } from '../../support/login'
 import { getAuthHeaders } from '../../support/getAuthHeaders'
 
 test.describe('Download spec', () => {
   test('get to the download page', async ({ page, context }) => {
-    await page.route('**/*.{png,jpg,jpeg}', (route) => route.abort())
+    await setupTests({
+      page,
+      context
+    })
 
-    login(context)
+    await login(context)
 
     const authHeaders = getAuthHeaders()
 

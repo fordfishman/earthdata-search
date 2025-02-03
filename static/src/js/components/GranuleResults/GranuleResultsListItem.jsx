@@ -11,6 +11,8 @@ import { granuleListItem } from './skeleton'
 import GranuleResultsItem from './GranuleResultsItem'
 import Skeleton from '../Skeleton/Skeleton'
 
+import './GranuleResultsListItem.scss'
+
 /**
  * Renders GranuleResultsListItem.
  * @param {Object} props - The props passed into the component.
@@ -29,7 +31,10 @@ export const GranuleResultsListItem = memo(({
 
   const {
     collectionId,
+    collectionQuerySpatial,
+    collectionTags,
     directDistributionInformation,
+    generateNotebook,
     granules,
     isCollectionInProject,
     isGranuleInProject,
@@ -39,8 +44,11 @@ export const GranuleResultsListItem = memo(({
     onAddGranuleToProjectCollection,
     onExcludeGranule,
     onFocusedGranuleChange,
+    onGenerateNotebook,
+    onMetricsAddGranuleProject,
     onMetricsDataAccess,
     onRemoveGranuleFromProjectCollection,
+    readableGranuleName,
     setRowHeight,
     windowWidth
   } = data
@@ -59,7 +67,7 @@ export const GranuleResultsListItem = memo(({
     setRowHeight(rowIndex, columnIndex, currentHeight)
   }, [windowWidth, element.current])
 
-  // Tweak the position of the elements to simultate the correct margins
+  // Tweak the position of the elements to simulate the correct margins
   const customStyle = {
     ...style,
     left: style.left + remInPixels,
@@ -96,21 +104,29 @@ export const GranuleResultsListItem = memo(({
   if (!granule) return null
 
   return (
-    <li className="granule-results-list-item" style={customStyle}>
-      <GranuleResultsItem
-        collectionId={collectionId}
-        directDistributionInformation={directDistributionInformation}
-        granule={granules[index]}
-        isCollectionInProject={isCollectionInProject}
-        isGranuleInProject={isGranuleInProject}
-        location={location}
-        onAddGranuleToProjectCollection={onAddGranuleToProjectCollection}
-        onExcludeGranule={onExcludeGranule}
-        onFocusedGranuleChange={onFocusedGranuleChange}
-        onMetricsDataAccess={onMetricsDataAccess}
-        onRemoveGranuleFromProjectCollection={onRemoveGranuleFromProjectCollection}
-        ref={element}
-      />
+    <li className="granule-results-list-item" style={style}>
+      <div className="granule-results-list-item__wrapper">
+        <GranuleResultsItem
+          collectionId={collectionId}
+          collectionQuerySpatial={collectionQuerySpatial}
+          collectionTags={collectionTags}
+          directDistributionInformation={directDistributionInformation}
+          generateNotebook={generateNotebook}
+          granule={granules[index]}
+          isCollectionInProject={isCollectionInProject}
+          isGranuleInProject={isGranuleInProject}
+          location={location}
+          onAddGranuleToProjectCollection={onAddGranuleToProjectCollection}
+          onExcludeGranule={onExcludeGranule}
+          onGenerateNotebook={onGenerateNotebook}
+          onFocusedGranuleChange={onFocusedGranuleChange}
+          onMetricsDataAccess={onMetricsDataAccess}
+          onMetricsAddGranuleProject={onMetricsAddGranuleProject}
+          onRemoveGranuleFromProjectCollection={onRemoveGranuleFromProjectCollection}
+          readableGranuleName={readableGranuleName}
+          ref={element}
+        />
+      </div>
     </li>
   )
 })
@@ -121,7 +137,10 @@ GranuleResultsListItem.propTypes = {
   columnIndex: PropTypes.number.isRequired,
   data: PropTypes.shape({
     collectionId: PropTypes.string,
+    collectionQuerySpatial: PropTypes.shape({}).isRequired,
+    collectionTags: PropTypes.shape({}).isRequired,
     directDistributionInformation: PropTypes.shape({}),
+    generateNotebook: PropTypes.shape({}).isRequired,
     granules: PropTypes.arrayOf(PropTypes.shape({})),
     isCollectionInProject: PropTypes.bool,
     isGranuleInProject: PropTypes.func,
@@ -131,8 +150,11 @@ GranuleResultsListItem.propTypes = {
     onAddGranuleToProjectCollection: PropTypes.func,
     onExcludeGranule: PropTypes.func,
     onFocusedGranuleChange: PropTypes.func,
+    onGenerateNotebook: PropTypes.func,
+    onMetricsAddGranuleProject: PropTypes.func,
     onMetricsDataAccess: PropTypes.func,
     onRemoveGranuleFromProjectCollection: PropTypes.func,
+    readableGranuleName: PropTypes.arrayOf(PropTypes.string).isRequired,
     setRowHeight: PropTypes.func,
     windowWidth: PropTypes.number
   }).isRequired,

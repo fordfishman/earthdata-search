@@ -51,6 +51,21 @@
     timeout: 900
 
   #
+  # Generate Jupyter Notebook Lambda
+  #
+  generateNotebook:
+    handler: serverless/src/generateNotebook/handler.default
+    timeout: ${env:LAMBDA_TIMEOUT, '30'}
+    events:
+      - http:
+          method: post
+          cors: ${file(./serverless-configs/${self:provider.name}-cors-configuration.yml)}
+          path: generate_notebook
+          authorizer:
+            name: edlOptionalAuthorizer
+            type: request
+            resultTtlInSeconds: 0
+
   # SQS Lambdas
   #
   processColorMap:
@@ -175,6 +190,7 @@
   generateGibsTags:
     handler: serverless/src/generateGibsTags/handler.default
     description: Tag CMR collections with GIBS product information
+    memorySize: 512
     timeout: 300
     events:
       - schedule:
@@ -689,6 +705,7 @@
 
   adminGetPreferencesMetrics:
     handler: serverless/src/adminGetPreferencesMetrics/handler.default
+    memorySize: 1024
     timeout: ${env:LAMBDA_TIMEOUT, '30'}
     events:
       - http:

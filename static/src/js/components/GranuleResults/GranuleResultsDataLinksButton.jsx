@@ -19,8 +19,8 @@ import './GranuleResultsDataLinksButton.scss'
  * @param {Object} props - The props passed into the component.
  * @param {Function} props.onClick - The click callback.null
  */
-// eslint-disable-next-line react/display-name
 export const CustomDataLinksToggle = React.forwardRef(({
+  id,
   onClick
 }, ref) => {
   const handleClick = (event) => {
@@ -36,15 +36,20 @@ export const CustomDataLinksToggle = React.forwardRef(({
       type="button"
       icon={Download}
       ref={ref}
-      label="Download single granule data"
+      label="Download granule data"
+      tooltip="Download granule data"
+      tooltipId={`download-granule-tooltip-${id}`}
       onClick={handleClick}
     />
   )
 })
 
 CustomDataLinksToggle.propTypes = {
+  id: PropTypes.string.isRequired,
   onClick: PropTypes.func.isRequired
 }
+
+CustomDataLinksToggle.displayName = 'CustomDataLinksToggle'
 
 /**
  * Renders GranuleResultsDataLinksButton.
@@ -53,6 +58,7 @@ CustomDataLinksToggle.propTypes = {
  * @param {String} props.collectionId - The collection ID.
  * @param {Object} props.directDistributionInformation - The collection direct distribution information.
  * @param {Array} props.dataLinks - An array of data links.
+ * @param {String} props.id - The granule id.
  * @param {Array} props.s3Links - An array of AWS S3 links.
  * @param {Function} props.onMetricsDataAccess - The metrics callback.
  */
@@ -61,6 +67,7 @@ export const GranuleResultsDataLinksButton = ({
   buttonVariant,
   dataLinks,
   directDistributionInformation,
+  id,
   s3Links,
   onMetricsDataAccess
 }) => {
@@ -198,8 +205,8 @@ export const GranuleResultsDataLinksButton = ({
     }
 
     return (
-      <Dropdown onClick={(event) => { event.stopPropagation() }} drop="right">
-        <Dropdown.Toggle as={CustomDataLinksToggle} />
+      <Dropdown onClick={(event) => { event.stopPropagation() }} drop="down">
+        <Dropdown.Toggle as={CustomDataLinksToggle} id={id} />
         {
           ReactDOM.createPortal(
             <Dropdown.Menu
@@ -285,15 +292,19 @@ export const GranuleResultsDataLinksButton = ({
         variant={buttonVariant}
         href={dataLinks[0].href}
         onClick={
-          () => onMetricsDataAccess({
-            type: 'single_granule_download',
-            collections: [{
-              collectionId
-            }]
-          })
+          (event) => {
+            onMetricsDataAccess({
+              type: 'single_granule_download',
+              collections: [{
+                collectionId
+              }]
+            })
+
+            event.stopPropagation()
+          }
         }
         rel="noopener noreferrer"
-        label="Download single granule data"
+        label="Download granule data"
         target="_blank"
       />
     )
@@ -319,6 +330,7 @@ GranuleResultsDataLinksButton.defaultProps = {
 }
 
 GranuleResultsDataLinksButton.propTypes = {
+  id: PropTypes.string.isRequired,
   buttonVariant: PropTypes.string,
   collectionId: PropTypes.string.isRequired,
   directDistributionInformation: PropTypes.shape({

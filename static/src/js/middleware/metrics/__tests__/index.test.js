@@ -6,10 +6,13 @@ import {
   METRICS_BROWSE_GRANULE_IMAGE,
   METRICS_DATA_ACCESS,
   METRICS_GRANULE_FILTER,
+  METRICS_ADD_COLLECTION_PROJECT,
+  METRICS_ADD_GRANULE_PROJECT,
   METRICS_MAP,
   METRICS_RELATED_COLLECTION,
   METRICS_SPATIAL_EDIT,
   METRICS_SPATIAL_SELECTION,
+  METRICS_TEMPORAL_FILTER,
   METRICS_TIMELINE,
   METRICS_TIMING
 } from '../constants'
@@ -22,10 +25,13 @@ jest.mock('../events', () => ({
   dataAccess: jest.fn(),
   defaultClick: jest.fn(),
   granuleFilter: jest.fn(),
+  addCollectionProject: jest.fn(),
+  addGranuleProject: jest.fn(),
   map: jest.fn(),
   relatedCollection: jest.fn(),
   spatialEdit: jest.fn(),
   spatialSelection: jest.fn(),
+  temporalFilter: jest.fn(),
   timeline: jest.fn(),
   timing: jest.fn(),
   virtualPageview: jest.fn()
@@ -179,6 +185,48 @@ describe('metrics middleware', () => {
     invoke(action)
     expect(events.granuleFilter).toHaveBeenCalledTimes(1)
     expect(events.granuleFilter).toHaveBeenCalledWith(action)
+  })
+
+  test('calls addCollectionProject event', () => {
+    const { invoke } = createStore()
+
+    const action = {
+      type: METRICS_ADD_COLLECTION_PROJECT,
+      payload: {
+        item: 'Test'
+      }
+    }
+    invoke(action)
+    expect(events.addCollectionProject).toHaveBeenCalledTimes(1)
+    expect(events.addCollectionProject).toHaveBeenCalledWith(action)
+  })
+
+  test('calls addGranuleProject event', () => {
+    const { invoke } = createStore()
+
+    const action = {
+      type: METRICS_ADD_GRANULE_PROJECT,
+      payload: {
+        item: 'Test'
+      }
+    }
+    invoke(action)
+    expect(events.addGranuleProject).toHaveBeenCalledTimes(1)
+    expect(events.addGranuleProject).toHaveBeenCalledWith(action)
+  })
+
+  test('calls temporalFilter event', () => {
+    const { invoke } = createStore()
+
+    const action = {
+      type: METRICS_TEMPORAL_FILTER,
+      payload: {
+        item: 'Test'
+      }
+    }
+    invoke(action)
+    expect(events.temporalFilter).toHaveBeenCalledTimes(1)
+    expect(events.temporalFilter).toHaveBeenCalledWith(action)
   })
 
   test('calls timing event', () => {

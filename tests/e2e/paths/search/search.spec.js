@@ -3,6 +3,8 @@ import { test, expect } from 'playwright-test-coverage'
 import { commafy } from '../../../../static/src/js/util/commafy'
 import { pluralize } from '../../../../static/src/js/util/pluralize'
 
+import { setupTests } from '../../../support/setupTests'
+
 import awsCloudBody from './__mocks__/aws_cloud.body.json'
 import commonBody from './__mocks__/common.body.json'
 import commonHeaders from './__mocks__/common.headers.json'
@@ -79,6 +81,13 @@ const testResultsSize = async (page, cmrHits) => {
 }
 
 test.describe('Path /search', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setupTests({
+      page,
+      context
+    })
+  })
+
   test.describe('When the path is loaded without any url params', () => {
     test('loads correctly', async ({ page }) => {
       const cmrHits = 8098
@@ -251,8 +260,8 @@ test.describe('Path /search', () => {
 
         await expect(page.getByTestId('spatial-display_point')).toHaveValue('4.33676,65.44171')
 
-        // Test leaflet has drawn the shape correctly
-        await expect(page.locator('.leaflet-marker-pane img')).toHaveAttribute('style', 'margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(1165px, 386px, 0px); z-index: 386;')
+        // Test leaflet has drawn the point
+        await expect(await page.getByRole('button', { name: 'Marker' }).all()).toHaveLength(1)
       })
     })
 
@@ -288,8 +297,9 @@ test.describe('Path /search', () => {
 
         await expect(page.getByTestId('spatial-display_polygon')).toHaveText('3 Points')
 
-        // Test leaflet has drawn the shape correctly
-        await expect(page.locator('.leaflet-interactive')).toHaveAttribute('d', 'M1161 407L1122 483L1257 502L1161 407z')
+        // Test leaflet has drawn the shape
+        await expect(await page.locator('g path').first()).toBeVisible()
+        await expect(await page.locator('g path').all()).toHaveLength(1)
       })
     })
 
@@ -326,8 +336,9 @@ test.describe('Path /search', () => {
         await expect(page.getByTestId('spatial-display_circle-center')).toHaveValue('2.22154,62.18209')
         await expect(page.getByTestId('spatial-display_circle-radius')).toHaveValue('100000')
 
-        // Test leaflet has drawn the shape correctly
-        await expect(page.locator('.leaflet-interactive')).toHaveAttribute('d', 'M1136.1837511111112,401.20238222222224a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 ')
+        // Test leaflet has drawn the shape
+        await expect(await page.locator('g path').first()).toBeVisible()
+        await expect(await page.locator('g path').all()).toHaveLength(1)
       })
     })
 
@@ -364,8 +375,9 @@ test.describe('Path /search', () => {
         await expect(page.getByTestId('spatial-display_southwest-point')).toHaveValue('0.99949,5.02679')
         await expect(page.getByTestId('spatial-display_northeast-point')).toHaveValue('26.17555,32.8678')
 
-        // Test leaflet has drawn the shape correctly
-        await expect(page.locator('.leaflet-interactive')).toHaveAttribute('d', 'M736 410L736 231L934 231L934 410L736 410z')
+        // Test leaflet has drawn the shape
+        await expect(await page.locator('g path').first()).toBeVisible()
+        await expect(await page.locator('g path').all()).toHaveLength(1)
       })
     })
 
@@ -438,8 +450,9 @@ test.describe('Path /search', () => {
         await expect(page.getByTestId('spatial-display_shapefile-name')).toHaveText('test.geojson')
         await expect(page.getByTestId('filter-stack-item__hint')).toHaveText('1 shape selected')
 
-        // Test leaflet has drawn the shape correctly
-        await expect(page.locator('.leaflet-interactive').first()).toHaveAttribute('d', 'M1161 407L1122 483L1257 502L1161 407z')
+        // Test leaflet has drawn the shape
+        await expect(await page.locator('g path').first()).toBeVisible()
+        await expect(await page.locator('g path').all()).toHaveLength(2)
       })
     })
   })

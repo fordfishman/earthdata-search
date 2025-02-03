@@ -24,6 +24,7 @@ export class ShapefileLayerExtended extends L.Layer {
     this.isProjectPage = props.isProjectPage
     this.onToggleTooManyPointsModal = props.onToggleTooManyPointsModal
     this.onChangeProjection = props.onChangeProjection
+    this.projection = props.projection
 
     this.options = {
       selection: L.extend({}, defaultOptions.selection, colorOptions)
@@ -190,6 +191,7 @@ export class ShapefileLayerExtended extends L.Layer {
     const layersToSelect = []
     let allLatsArctic = false
     let allLatsAntarctic = false
+
     // eslint-disable-next-line new-cap
     const jsonLayer = new L.geoJson(response, {
       className: 'geojson-svg',
@@ -239,14 +241,29 @@ export class ShapefileLayerExtended extends L.Layer {
       }
     })
 
+    if (allLatsArctic && this.projection !== projections.arctic) {
+      // Change projection to arctic
+      this.onChangeProjection(projections.arctic)
+
+      return
+    }
+
+    if (allLatsAntarctic && this.projection !== projections.antarctic) {
+      // Change projection to arctic
+      this.onChangeProjection(projections.antarctic)
+
+      return
+    }
+
     if (!this.isProjectPage) jsonLayer.on('click', this.clickLayer)
     this.jsonLayer = jsonLayer
     this.jsonLayer.addTo(this.map)
-    if (panMap) this.map.flyToBounds(jsonLayer.getBounds())
+    if (panMap) this.map.flyToBounds(jsonLayer.getBounds(), { animate: false })
     this.onMetricsMap('Added Shapefile')
 
     const children = jsonLayer.getLayers()
 
+    // If the shapefile only has one feature, select it
     if (children.length === 1) {
       const { feature } = children[0]
       const { edscId } = feature
@@ -255,23 +272,14 @@ export class ShapefileLayerExtended extends L.Layer {
       onUpdateShapefile({ selectedFeatures: [edscId] })
 
       this.setConstraint(children[0])
+    } else {
+      // Else, select layers found in `selectedFeatures`
+      layersToSelect.forEach((layer) => this.setConstraint(layer))
     }
-
-    layersToSelect.forEach((layer) => this.setConstraint(layer))
 
     const fileHash = forge.md.md5.create()
     fileHash.update(JSON.stringify(response))
     this.fileHash = fileHash.digest().toHex()
-
-    if (allLatsArctic) {
-      // Change projection to arctic
-      this.onChangeProjection(projections.arctic)
-    }
-
-    if (allLatsAntarctic) {
-      // Change projection to arctic
-      this.onChangeProjection(projections.antarctic)
-    }
   }
 
   // Fired when a shapefile layer, or selected shape layer is clicked

@@ -13,7 +13,9 @@ import commonHeaders from './__mocks__/common/common.headers.json'
 import associatedDoisGranulesBody from './__mocks__/associated_dois/granules.body.json'
 import graphQlHeaders from './__mocks__/common/graphql.headers.json'
 import getSubscriptionsGraphQlBody from './__mocks__/common/getSubscriptions.graphql.body.json'
+
 import { login } from '../../../../../support/login'
+import { setupTests } from '../../../../../support/setupTests'
 
 /**
  * Tests the title displayed in the collection details
@@ -207,10 +209,15 @@ const testCollectionGibsProjections = async (page, projections) => {
 }
 
 test.describe('Path /search/granules/collection-details', () => {
+  test.beforeEach(async ({ page, context }) => {
+    await setupTests({
+      page,
+      context
+    })
+  })
+
   test.describe('When collection has associated DOIs', () => {
     test('loads correctly', async ({ page, context }) => {
-      await page.route('**/*.{png,jpg,jpeg}', (route) => route.abort())
-
       const conceptId = 'C1240222820-ECHO_REST'
       const cmrHits = 12345
       const granuleHits = 0
@@ -294,7 +301,6 @@ test.describe('Path /search/granules/collection-details', () => {
 
   test.describe('When collection has multiple reformatting options', () => {
     test('loads correctly', async ({ page }) => {
-      await page.route('**/*.{png,jpg,jpeg}', (route) => route.abort())
       const conceptId = 'C1996546500-GHRC_DAAC'
       const cmrHits = 8180
       const granuleHits = 6338
